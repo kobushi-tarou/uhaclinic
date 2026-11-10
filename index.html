@@ -207,7 +207,7 @@
 <div class="buttons">
   <button onclick="examineSelected()">診察する（無料1回 or バイト医）</button>
   <button onclick="playResources()">割り当てる</button>
-  <button onclick="reduceWait()">バイト医で待ち時間-1</button>
+  <button onclick="nursePersuade()">看護師による説得（待ち時間+1）</button>
   <button onclick="endTurn()">ターン終了</button>
   <button onclick="restart()">最初から</button>
 </div>
@@ -242,17 +242,24 @@
       ・手札のリソースカードをタップ → 選択（複数選択可）<br>
       ・「診察する」：選択した患者を診察<br>
       ・「割り当てる」：選択したリソースを患者に付ける<br>
-      ・「バイト医で待ち時間+1」：バイト医1枚を消費して待ち時間を1増やす<br>
+      ・「看護師による説得（待ち時間+1）」：看護師1枚を消費して待ち時間を1増やす<br>
       ・「ターン終了」：待ち時間を進めて次のターンへ</p>
       
+      <p><strong>患者カードの見方</strong><br>
+      ・右上の数字：残り待ち時間（1になると赤背景。0になるとクレーム）<br>
+      ・左上の名前：患者の種類<br>
+      ・下のゲージ：■が付いている数だけリソースが割り当て済み（□はまだ必要）<br>
+      ・右下の数字：治療完了時の売上</p>
+      
       <p><strong>特殊能力付き患者</strong><br>
+      ・若者：看護師による説得が無効<br>
       ・老人：バイト医での診察も、バイト医を看護師の代わりに使うこともできない<br>
       ・生活保護：場に出たとき、同時に来た他の患者の待ち時間を-1する<br>
       ・子供：ターン終了時に、治療が完了していなければ付けたリソースがリセットされる<br>
       ・薬だけ患者：診察不要で、薬だけあれば治療できる</p>
       
       <p><strong>特殊なリソース</strong><br>
-      ・バイト医：看護師の代わりに使える／追加の診察に使える／1枚消費して待ち時間を1増やせる<br>
+      ・バイト医：看護師の代わりに使える／追加の診察に使える<br>
       ・処方箋：薬3枚分として使えるが、使用した患者の売上が-2される（最低1）</p>
     </div>
     <button onclick="closeRules()" style="margin-top:15px;">閉じる</button>
@@ -624,24 +631,29 @@ function playResources() {
   render();
 }
 
-function increaseWait() {
+function nursePersuade() {
   if (gameOver || !selectedPatient) {
-    log("待ち時間を増やす患者を選択してください");
+    log("説得する患者を選択してください");
     return;
   }
   const p = field.find(x => x.id === selectedPatient);
   if (!p) return;
 
-  // バイト医を1枚探す
-  const parttimeCard = hand.find(r => r.type === "parttime");
-  if (!parttimeCard) {
-    log("バイト医カードがありません");
+  if (p.special === "noNursePersuade") {
+    log("若者には看護師による説得が無効です");
     return;
   }
 
-  hand = hand.filter(r => r.id !== parttimeCard.id);
+  // 看護師を1枚探す
+  const nurseCard = hand.find(r => r.type === "nurse");
+  if (!nurseCard) {
+    log("看護師カードがありません");
+    return;
+  }
+
+  hand = hand.filter(r => r.id !== nurseCard.id);
   p.currentWait++;
-  log(`${p.name} の待ち時間を1増やしました（バイト医消費）`);
+  log(`${p.name} を看護師が説得し、待ち時間を1増やしました`);
 
   selectedPatient = null;
   selectedResources = [];
