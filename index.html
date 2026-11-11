@@ -304,12 +304,12 @@ const RESOURCE_IMAGES = {
 const PATIENT_TYPES = [
   { name: "若者", nurses: 1, medicine: 1, sales: 1, maxWait: 4, special: "noNursePersuade" },
   { name: "中年", nurses: 1, medicine: 2, sales: 2, maxWait: 4 },
-  { name: "老人", nurses: 3, medicine: 2, sales: 4, maxWait: 4, special: "noParttimeAtAll" },
+  { name: "老人", nurses: 2, medicine: 2, sales: 4, maxWait: 4, special: "noParttimeAtAll" },
   { name: "生活保護", nurses: 2, medicine: 3, sales: 5, maxWait: 4, special: "onEnterWait" },
   { name: "薬だけ患者", nurses: 0, medicine: 2, sales: 2, maxWait: 2, noExam: true },
   { name: "子供", nurses: 2, medicine: 0, sales: 1, maxWait: 3, special: "resetOnEndTurn" },
   { name: "家族連れ", nurses: 2, medicine: 3, sales: 4, maxWait: 5 },
-  { name: "政治家", nurses: 3, medicine: 1, sales: 3, maxWait: 2 },
+  { name: "政治家", nurses: 2, medicine: 1, sales: 3, maxWait: 2 },
 ];
 
 // Resource ratio: バイト医:看護師:薬:処方箋 = 2:3:4:1
@@ -437,7 +437,7 @@ function render() {
     let specialText = "";
     if (p.special === "noNursePersuade") specialText = '<div class="special">看護師による説得無効</div>';
     if (p.special === "noParttimeAtAll") specialText = '<div class="special">バイト医完全無効</div>';
-    if (p.special === "onEnterWait") specialText = '<div class="special">来院時、一番安全な患者の待ち-1（複数なら全員）</div>';
+    if (p.special === "onEnterWait") specialText = '<div class="special">来院時、一番安全な患者の待ち-1</div>';
     if (p.special === "resetOnEndTurn") specialText = '<div class="special">ターン終了時リソースリセット</div>';
     if (p.noExam) specialText = '<div class="special">診察不要</div>';
     div.innerHTML = `
@@ -674,16 +674,28 @@ function nursePersuade() {
 
 function checkComplaints() {
   const toRemove = [];
+  const complainedNames = [];
   field.forEach(p => {
     if (p.currentWait <= 0) {
       complaints++;
       complaintCards.push({ ...p });
       toRemove.push(p.id);
+      complainedNames.push(p.name);
       log(`クレーム発生！ ${p.name} が帰りました`);
-      setTimeout(() => alert(`${p.name} からクレームが入りました`), 100);
     }
   });
   field = field.filter(p => !toRemove.includes(p.id));
+
+  // まとめて1回だけポップアップ
+  if (complainedNames.length > 0) {
+    setTimeout(() => {
+      if (complainedNames.length === 1) {
+        alert(`${complainedNames[0]} からクレームが入りました`);
+      } else {
+        alert(`${complainedNames.join("、")} からクレームが入りました`);
+      }
+    }, 100);
+  }
 
   // 即座にゲームオーバー判定
   if (complaints >= 5) {
@@ -753,7 +765,7 @@ function calculateKoukin() {
   treatedPatients.forEach(p => {
     if (p.name === "子供" || p.name === "生活保護") {
       koukin += p.sales;
-    } else if (p.name === "老人") {
+    } else if (p.name === "老人" || p.name === "薬だけ患者") {
       koukin += p.sales * 0.9;
     } else {
       koukin += p.sales * 0.7;
