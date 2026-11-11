@@ -206,8 +206,8 @@
 
 <div class="buttons">
   <button onclick="examineSelected()">診察する（無料1回 or バイト医）</button>
-  <button onclick="playResources()">割り当てる</button>
-  <button onclick="nursePersuade()">看護師による説得（待ち時間+1）</button>
+  <button onclick="playResources()">手札を割り当てる</button>
+  <button onclick="nursePersuade()">看護師による説得（2枚消費で待ち時間+1）</button>
   <button onclick="endTurn()">ターン終了</button>
   <button onclick="restart()">最初から</button>
 </div>
@@ -302,7 +302,7 @@ const RESOURCE_IMAGES = {
 };
 
 const PATIENT_TYPES = [
-  { name: "若者", nurses: 1, medicine: 1, sales: 1, maxWait: 4, special: "noNursePersuade" },
+  { name: "若者", nurses: 1, medicine: 1, sales: 1, maxWait: 3, special: "noNursePersuade" },
   { name: "中年", nurses: 1, medicine: 2, sales: 2, maxWait: 4 },
   { name: "老人", nurses: 2, medicine: 2, sales: 4, maxWait: 4, special: "noParttimeAtAll" },
   { name: "生活保護", nurses: 2, medicine: 3, sales: 5, maxWait: 4, special: "onEnterWait" },
@@ -656,16 +656,18 @@ function nursePersuade() {
     return;
   }
 
-  // 看護師を1枚探す
-  const nurseCard = hand.find(r => r.type === "nurse");
-  if (!nurseCard) {
-    log("看護師カードがありません");
+  // 看護師を2枚探す
+  const nurseCards = hand.filter(r => r.type === "nurse");
+  if (nurseCards.length < 2) {
+    log("看護師カードが2枚ありません");
     return;
   }
 
-  hand = hand.filter(r => r.id !== nurseCard.id);
+  // 2枚消費
+  const toRemove = nurseCards.slice(0, 2).map(r => r.id);
+  hand = hand.filter(r => !toRemove.includes(r.id));
   p.currentWait++;
-  log(`${p.name} を看護師が説得し、待ち時間を1増やしました`);
+  log(`${p.name} を看護師2人が説得し、待ち時間を1増やしました`);
 
   selectedPatient = null;
   selectedResources = [];
